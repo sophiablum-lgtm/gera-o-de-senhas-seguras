@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Senhas Seguras</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Gerador de Senhas</h1>
+        
+        <div class="password-box">
+            <input type="text" id="password" readonly placeholder="Sua senha aparecerá aqui">
+            <button id="copy-btn" onclick="copiarSenha()">Copiar</button>
+        </div>
+
+        <div class="settings">
+            <div class="setting">
+                <label for="length">Comprimento da senha: <span id="length-val">16</span></label>
+                <input type="range" id="length" min="8" max="32" value="16">
+            </div>
+        </div>
+
+        <button id="generate-btn" onclick="gerarSenha()">Gerar Senha Segura</button>
+    </div>
+
+    <script>
+        // Atualiza o valor do texto do slider
+        const lengthSlider = document.getElementById('length');
+        const lengthVal = document.getElementById('length-val');
+        lengthSlider.addEventListener('input', () => {
+            lengthVal.textContent = lengthSlider.value;
+        });
+
+        function generarSenha() {
+            const comprimento = parseInt(lengthSlider.value);
+            
+            const minusculas = "abcdefghijklmnopqrstuvwxyz";
+            const maiusculas = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const numeros = "0123456789";
+            const especiais = "!@#$%^&*()-_=+[{]};:,.<>/?";
+            const todosOsCaracteres = minusculas + maiusculas + numeros + especiais;
+
+            // Utiliza a API Web Crypto para gerar valores aleatórios criptograficamente seguros
+            const arrayAleatorio = new Uint32Array(comprimento);
+            window.crypto.getRandomValues(arrayAleatorio);
+
+            let senha = [];
+            
+            // Garante pelo menos um caractere de cada tipo essencial nas primeiras posições
+            senha.push(minusculas[arrayAleatorio[0] % minusculas.length]);
+            senha.push(maiusculas[arrayAleatorio[1] % maiusculas.length]);
+            senha.push(numeros[arrayAleatorio[2] % numeros.length]);
+            senha.push(especiais[arrayAleatorio[3] % especiais.length]);
+
+            // Preenche o restante do comprimento de forma aleatória
+            for (let i = 4; i < comprimento; i++) {
+                senha.push(todosOsCaracteres[arrayAleatorio[i] % todosOsCaracteres.length]);
+            }
+
+            // Embaralha o array final usando o algoritmo Fisher-Yates com entropia segura
+            for (let i = senha.length - 1; i > 0; i--) {
+                const j = arrayAleatorio[i] % (i + 1);
+                const temp = senha[i];
+                senha[i] = senha[j];
+                senha[j] = temp;
+            }
+
+            document.getElementById('password').value = senha.join('');
+        }
+
+        function copiarSenha() {
+            const passwordField = document.getElementById('password');
+            if (!passwordField.value) return;
+
+            passwordField.select();
+            passwordField.setSelectionRange(0, 99999); // Para dispositivos móveis
+
+            navigator.clipboard.writeText(passwordField.value)
+                .then(() => {
+                    const btn = document.getElementById('copy-btn');
+                    btn.textContent = "Copiado!";
+                    btn.style.backgroundColor = "#2ecc71";
+                    setTimeout(() => {
+                        btn.textContent = "Copiar";
+                        btn.style.backgroundColor = "#34495e";
+                    }, 2000);
+                })
+                .catch(err => {
+                    alert("Erro ao copiar a senha.");
+                });
+        }
+
+        // Gera uma senha automaticamente ao carregar a página
+        window.onload = generarSenha;
+    </script>
+</body>
+</html>
